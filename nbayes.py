@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+# Naive Bayes classification of binary instances.
+# Bart Massey
 
 import csv, math, random, sys
 
