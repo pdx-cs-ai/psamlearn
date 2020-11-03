@@ -35,44 +35,42 @@ spams = [i for i in training if i.label == 1]
 nspams = len(spams)
 hams = [i for i in training if i.label == 0]
 nhams = len(hams)
+nsH = [nhams, nspams]
 
 # Probability that a training message is spam.
 prH = nspams / ntraining
+prnotH = nhams / ntraining
+prsH = [prH, prnotH]
+
+# Per-feature probabilities of evidence given
+# hypothesis. Access is nsEH[label][feature][fval].
+nsEH = list()
+for label in [0, 1]:
+    lcounts = list()
+    for f in range(nfeatures):
+        counts = [0, 0]
+        for inst in training:
+            if inst.label == label:
+                counts[inst.features[f]] += 1
+        lcounts.append(counts)
+    nsEH.append(lcounts)
 
 # Return a score proportional to the Naïve Bayes
-# log-likelihood that an instance is spam.
-def score_spam(instance):
+# log-likelihood that an instance has the given label.
+def score_label(instance, label):
     # Compute probability of evidence given hypothesis.
     logprEH = list()
     for f in range(nfeatures):
-        count = 0
-        for tr in spams:
-            if tr.features[f] == instance.features[f]:
-                count += 1
-        logprEH.append(math.log2((count + 0.5) / (nspams + 0.5)))
+        count = nsEH[label][f][instance.features[f]]
+        logprEH.append(math.log2((count + 0.5) / (nsH[label] + 0.5)))
 
-    return sum(logprEH) * prH
-
-# Return a score proportional to the Naïve Bayes
-# log-likelihood that an instance is ham.
-# XXX Heavy copy-paste from above.
-def score_ham(instance):
-    # Compute probability of evidence given hypothesis.
-    logprEH = list()
-    for f in range(nfeatures):
-        count = 0
-        for tr in hams:
-            if tr.features[f] == instance.features[f]:
-                count += 1
-        logprEH.append(math.log2((count + 0.5) / (nhams + 0.5)))
-
-    return sum(logprEH) * prH
+    return sum(logprEH) * prsH[label]
 
 # Score test instances.
 correct = 0
 for inst in test:
-    ss = score_spam(inst)
-    sh = score_ham(inst)
+    ss = score_label(inst, 1)
+    sh = score_label(inst, 0)
     guess = int(ss > sh)
     print(inst.name, inst.label, guess)
     correct += int(inst.label == guess)
