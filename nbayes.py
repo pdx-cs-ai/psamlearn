@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import csv, random, sys
+import csv, math, random, sys
 
 # Class of instances.
 class Instance(object):
@@ -45,27 +45,27 @@ def product(vals):
 
 def score_spam(instance):
     # Compute probability of evidence given hypothesis.
-    prEH = list()
+    logprEH = list()
     for f in range(nfeatures):
         count = 0
         for tr in spams:
             if tr.features[f] == instance.features[f]:
                 count += 1
-        prEH.append(count / nspams)
+        logprEH.append(math.log2((count + 0.5) / (nspams + 0.5)))
 
-    return product(prEH) * prH
+    return sum(logprEH) * prH
 
 def score_ham(instance):
     # Compute probability of evidence given hypothesis.
-    prEH = list()
+    logprEH = list()
     for f in range(nfeatures):
         count = 0
         for tr in hams:
             if tr.features[f] == instance.features[f]:
                 count += 1
-        prEH.append(count / nhams)
+        logprEH.append(math.log2((count + 0.5) / (nhams + 0.5)))
 
-    return product(prEH) * prH
+    return sum(logprEH) * prH
 
 
 for inst in test:
