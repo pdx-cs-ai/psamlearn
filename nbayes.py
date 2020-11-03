@@ -30,19 +30,17 @@ ntraining = len(training)
 test = instances[:split]
 ntest = len(test)
 
+# Split training into hams and spams.
 spams = [i for i in training if i.label == 1]
 nspams = len(spams)
 hams = [i for i in training if i.label == 0]
 nhams = len(hams)
 
+# Probability that a training message is spam.
 prH = nspams / ntraining
 
-def product(vals):
-    p = 1
-    for v in vals:
-        p *= v
-    return p
-
+# Return a score proportional to the Naïve Bayes
+# log-likelihood that an instance is spam.
 def score_spam(instance):
     # Compute probability of evidence given hypothesis.
     logprEH = list()
@@ -55,6 +53,9 @@ def score_spam(instance):
 
     return sum(logprEH) * prH
 
+# Return a score proportional to the Naïve Bayes
+# log-likelihood that an instance is ham.
+# XXX Heavy copy-paste from above.
 def score_ham(instance):
     # Compute probability of evidence given hypothesis.
     logprEH = list()
@@ -67,8 +68,13 @@ def score_ham(instance):
 
     return sum(logprEH) * prH
 
-
+# Score test instances.
+correct = 0
 for inst in test:
     ss = score_spam(inst)
     sh = score_ham(inst)
-    print(inst.name, inst.label, ss > sh, ss, sh)
+    guess = int(ss > sh)
+    print(inst.name, inst.label, guess)
+    correct += int(inst.label == guess)
+
+print("accuracy", correct / ntest)
