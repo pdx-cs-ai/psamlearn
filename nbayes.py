@@ -32,6 +32,8 @@ ntest = len(test)
 
 spams = [i for i in training if i.label == 1]
 nspams = len(spams)
+hams = [i for i in training if i.label == 0]
+nhams = len(hams)
 
 prH = nspams / ntraining
 
@@ -41,16 +43,7 @@ def product(vals):
         p *= v
     return p
 
-def prob_spam(instance):
-    # Compute probability of evidence.
-    prE = list()
-    for f in range(nfeatures):
-        count = 0
-        for tr in training:
-            if tr.features[f] == instance.features[f]:
-                count += 1
-        prE.append(count / ntraining)
-
+def score_spam(instance):
     # Compute probability of evidence given hypothesis.
     prEH = list()
     for f in range(nfeatures):
@@ -60,10 +53,22 @@ def prob_spam(instance):
                 count += 1
         prEH.append(count / nspams)
 
-    nprEH = product(prEH)
-    nprE = product(prE)
-    print(nprEH, nprE)
-    return  nprEH * prH / nprE
+    return product(prEH) * prH
+
+def score_ham(instance):
+    # Compute probability of evidence given hypothesis.
+    prEH = list()
+    for f in range(nfeatures):
+        count = 0
+        for tr in hams:
+            if tr.features[f] == instance.features[f]:
+                count += 1
+        prEH.append(count / nhams)
+
+    return product(prEH) * prH
+
 
 for inst in test:
-    print(inst.name, inst.label, prob_spam(inst))
+    ss = score_spam(inst)
+    sh = score_ham(inst)
+    print(inst.name, inst.label, ss > sh, ss, sh)
