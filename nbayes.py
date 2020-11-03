@@ -2,6 +2,9 @@
 
 import csv, math, random, sys
 
+# Show individual instance results.
+TRACE = False
+
 # Class of instances.
 class Instance(object):
     def __init__(self, row):
@@ -72,7 +75,8 @@ for inst in test:
     ss = score_label(inst, 1)
     sh = score_label(inst, 0)
     guess = int(ss > sh)
-    print(inst.name, inst.label, guess)
+    if TRACE:
+        print(inst.name, inst.label, guess)
     correct += int(inst.label == guess)
 
 print("accuracy", correct / ntest)
