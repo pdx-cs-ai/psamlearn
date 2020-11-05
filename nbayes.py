@@ -73,16 +73,16 @@ def try_tc(training, test):
         return sum(logprEH) * prsH[label]
 
     # Score test instances.
-    correct = 0
+    matrix = [[0] * 2 for _ in range(2)]
     for inst in test:
         ss = score_label(inst, 1)
         sh = score_label(inst, 0)
         guess = int(ss > sh)
         if TRACE:
             print(inst.name, inst.label, guess)
-        correct += int(inst.label == guess)
+        matrix[inst.label][guess] += 1
 
-    return correct / ntest
+    return matrix
 
 # Number of instances per split.
 nsplit = math.ceil(ninstances / nsplits)
@@ -94,4 +94,9 @@ for i in range(0, ninstances, nsplit):
         test = instances[i:i + nsplit]
     else:
         test = instances[i:]
-    print(try_tc(training, test))
+    ntest = len(test)
+    matrix = try_tc(training, test)
+    accuracy = (matrix[0][0] + matrix[1][1]) / ntest
+    fpr = matrix[0][1] / ntest
+    fnr = matrix[1][0] / ntest
+    print(f"acc:{accuracy:.3f} fpr:{fpr:.3f}  fnr:{fnr:.3f}")

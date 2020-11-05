@@ -25,5 +25,5 @@ cross-validation, say
 
     python3 nbayes.py personal.csv 10
 
-The output will consist of the accuracy for each
-cross-validation split.
+The output will consist of the accuracy, false-positive rate
+and false-negative rate for each cross-validation split.
