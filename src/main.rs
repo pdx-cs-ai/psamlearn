@@ -1,7 +1,6 @@
-mod instance;
-use instance::*;
-
 use argh::FromArgs;
+use rand::seq::SliceRandom;
+use serde::Deserialize;
 
 #[derive(FromArgs)]
 /// Machine learning with binary features and classification.
@@ -38,6 +37,13 @@ struct KNNArgs {
     k: Option<usize>,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct Instance {
+    name: String,
+    class: u8,
+    features: Vec<u8>,
+}
+
 fn main() {
     let args: Args = argh::from_env();
     let features: Box<dyn std::io::Read> = match args.features {
@@ -49,14 +55,19 @@ fn main() {
             }
         )),
     };
+
     let mut rdr = csv::ReaderBuilder::new().has_headers(false).from_reader(features);
-    let records: Vec<Instance> = rdr.deserialize().map(|r| r.unwrap_or_else(
-        |e| {
-            eprintln!("could not read record: {}", e);
-            std::process::exit(1);
-        },
-    )).collect();
-    println!("{:#?}", records);
+    let mut records: Vec<Instance> =
+        rdr.deserialize().map(|r| r.unwrap_or_else(
+            |e| {
+                eprintln!("could not read record: {}", e);
+                std::process::exit(1);
+            },
+        )).collect();
+
+    let mut rng = rand::thread_rng();
+    records.shuffle(&mut rng);
+
     match args.crossval {
         None => println!("split50"),
         Some(0) => println!("loocv"),
