@@ -1,3 +1,9 @@
+mod evenchunks;
+mod knn;
+mod nbayes;
+
+use evenchunks::*;
+
 use argh::FromArgs;
 use rand::seq::SliceRandom;
 use serde::Deserialize;
@@ -7,7 +13,7 @@ use serde::Deserialize;
 struct Args {
     /// n-way cross-validation (0 for LOOCV)
     #[argh(option)]
-    crossval: Option<u64>,
+    crossval: Option<usize>,
     /// learning algorithm
     #[argh(subcommand)]
     algorithm: ArgsAlg,
@@ -40,8 +46,12 @@ struct KNNArgs {
 #[derive(Deserialize, Debug)]
 pub struct Instance {
     name: String,
-    class: u8,
+    label: u8,
     features: Vec<u8>,
+}
+
+pub trait Model {
+    fn classify(&self, instance: &Instance) -> bool;
 }
 
 fn main() {
@@ -57,7 +67,7 @@ fn main() {
     };
 
     let mut rdr = csv::ReaderBuilder::new().has_headers(false).from_reader(features);
-    let mut records: Vec<Instance> =
+    let mut instances: Vec<Instance> =
         rdr.deserialize().map(|r| r.unwrap_or_else(
             |e| {
                 eprintln!("could not read record: {}", e);
@@ -66,18 +76,44 @@ fn main() {
         )).collect();
 
     let mut rng = rand::thread_rng();
-    records.shuffle(&mut rng);
+    instances.shuffle(&mut rng);
 
-    match args.crossval {
-        None => println!("split50"),
-        Some(0) => println!("loocv"),
-        Some(n) => println!("crossval {}", n),
-    }
-    match args.algorithm {
-        ArgsAlg::NBayes(NBayesArgs{}) => println!("nbayes"),
-        ArgsAlg::KNN(KNNArgs{k}) => match k {
-            None => println!("nbayes 5"),
-            Some(k) => println!("nbayes {}", k),
-        },
+    let samples: Vec<(Vec<&Instance>, &[Instance])> =
+        match args.crossval {
+            None => {
+                let split = instances.len() / 2;
+                vec![(
+                    instances[split..].iter().collect(),
+                    &instances[..split],
+                )]
+            },
+        Some(mut n) => {
+            if n == 0 {
+                n = instances.len();
+            }
+            let chunks: Vec<&[Instance]> =
+                EvenChunks::nchunks(&instances, n).collect();
+            (0..n).map(|i| {
+                let left = chunks[..i].iter().cloned().flatten();
+                let right = chunks[i+1..].iter().cloned().flatten();
+                (left.chain(right).collect(), chunks[i])
+            }).collect()
+        }
+    };
+
+    let train: Box<dyn Fn(&[&Instance])->Box<dyn Model>> =
+        match args.algorithm {
+            ArgsAlg::NBayes(NBayesArgs{}) => Box::new(|i| nbayes::train(i)),
+            ArgsAlg::KNN(KNNArgs{k}) => match k {
+                None => Box::new(|i| knn::train(5, i)),
+                Some(k) => Box::new(move |i| knn::train(k, i)),
+            },
+        };
+
+    for (tr, cl) in samples {
+        let model = train(&tr);
+        for c in cl.iter() {
+            println!("{} {}", c.label, model.classify(c));
+        }
     }
 }
