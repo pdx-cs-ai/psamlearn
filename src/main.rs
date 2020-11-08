@@ -125,6 +125,8 @@ fn main() {
             };
             stats[ix] += 1;
         }
-        println!("{:?}", stats);
+        let ntraining: usize = stats.iter().sum();
+        let accuracy = (stats[0] + stats[3]) as f64 / ntraining as f64;
+        println!("{:?} {:.3}", stats, accuracy);
     }
 }
