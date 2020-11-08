@@ -43,7 +43,7 @@ struct KNNArgs {
     k: Option<usize>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Instance {
     name: String,
     label: u8,
@@ -112,8 +112,19 @@ fn main() {
 
     for (tr, cl) in samples {
         let model = train(&tr);
+        let mut stats = [0usize; 4];
         for c in cl.iter() {
-            println!("{} {}", c.label, model.classify(c));
+            let actual = c.label;
+            let predicted = model.classify(c);
+            let ix = match (actual, predicted) {
+                (0, false) => 0,
+                (0, true) => 1,
+                (1, false) => 2,
+                (1, true) => 3,
+                _ => panic!("internal error: bad stats"),
+            };
+            stats[ix] += 1;
         }
+        println!("{:?}", stats);
     }
 }
