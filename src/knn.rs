@@ -22,11 +22,11 @@ fn collect_features(features: &[u8]) -> BigUint {
         })
 }
 
-fn count_ones(b: BigUint) -> u32 {
+fn count_ones(b: BigUint) -> u64 {
     b
         .to_u32_digits()
         .into_iter()
-        .map(|d| d.count_ones())
+        .map(|d| d.count_ones() as u64)
         .sum()
 }
 
@@ -53,7 +53,7 @@ impl Model for KNN {
         let mut info: Vec<(u8, u64)> = self.instances
             .iter()
             .map(|i| {
-                let h: u64 = count_ones(&i.features ^ &instance.features).into();
+                let h = count_ones(&i.features ^ &instance.features);
                 (i.label, h)
             })
             .collect();
