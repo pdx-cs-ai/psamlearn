@@ -46,29 +46,19 @@ def try_tc(training, test):
 
     # Score test instances.
     correct = 0
-    nk = 0
     for inst in test:
         ordering = list(training)
         ordering = sorted(
             ordering,
             key=lambda i: hamming(inst.features, i.features),
         )
-        ik = k
-        h = hamming(inst.features, ordering[ik - 1].features)
-        while ik < ntraining:
-            nh = hamming(inst.features, ordering[ik].features)
-            if nh != h:
-                break
-            ik += 1
-        nk += ik
             
         nspam = sum([i.label for i in ordering[:k]])
-        guess = nspam > ik / 2
+        guess = nspam > k / 2
         if TRACE:
             print(inst.name, inst.label, guess)
         correct += int(inst.label == guess)
 
-    print(f"neighbors:{nk / ntraining}")
     return correct / ntest
 
 # Number of instances per split.
