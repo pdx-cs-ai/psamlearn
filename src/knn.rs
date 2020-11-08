@@ -1,10 +1,10 @@
-use bvec::BVec;
+use num_bigint::BigUint;
 
 use crate::{Model, Instance};
 
 struct BVI {
     label: u8,
-    features: BVec,
+    features: BigUint,
 }
 
 pub struct KNN {
@@ -12,12 +12,30 @@ pub struct KNN {
     instances: Vec<BVI>,
 }
 
+fn collect_features(features: &[u8]) -> BigUint {
+    features
+        .iter()
+        .enumerate()
+        .fold(BigUint::from(0usize), |u, (i, &b)| {
+            let b: BigUint = b.into();
+            u | (b << i)
+        })
+}
+
+fn count_ones(b: BigUint) -> u32 {
+    b
+        .to_u32_digits()
+        .into_iter()
+        .map(|d| d.count_ones())
+        .sum()
+}
+
 pub fn train(k: usize, instances: &[&Instance]) -> Box<KNN> {
     let instances: Vec<BVI> = instances
         .iter()
         .map(|&i| BVI {
             label: i.label,
-            features: i.features.iter().map(|&i| i > 0).collect(),
+            features: collect_features(&i.features),
         })
         .collect();
     Box::new(KNN {
@@ -30,12 +48,12 @@ impl Model for KNN {
     fn classify(&self, instance: &Instance) -> bool {
         let instance = BVI {
             label: instance.label,
-            features: instance.features.iter().map(|&i| i > 0).collect(),
+            features: collect_features(&instance.features),
         };
         let mut info: Vec<(u8, u64)> = self.instances
             .iter()
             .map(|i| {
-                let h: u64 = (&i.features ^ &instance.features).count_ones();
+                let h: u64 = count_ones(&i.features ^ &instance.features).into();
                 (i.label, h)
             })
             .collect();

@@ -7,12 +7,9 @@ edition = "2018"
 [dependencies]
 argh = "0.1"
 csv = "1.1"
+num-bigint="0.3"
 rand = "0.7"
 
 [dependencies.serde]
 version = "1"
 features = ["derive"]
-
-[dependencies.bvec]
-version = "0.1"
-path = "/local/src/bvec"
