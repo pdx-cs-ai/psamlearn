@@ -16,6 +16,13 @@ This repository contains a couple of things:
 
 ## Running
 
+You will need the Python `gmpy2` package to run this. On
+Debian, you can say:
+
+    apt install libmpfr-dev
+    apt install libmpc-dev
+    pip3 install gmpy2
+
 To run on the "personal" corpus with 10-way
 cross-validation and a neighbor distance of 5, say
 
