@@ -50,15 +50,6 @@ def try_tc(training, test):
             ordering,
             key=lambda i: gmpy2.popcount(inst.features ^ i.features),
         )
-        ik = k
-        h = gmpy2.popcount(inst.features ^ ordering[ik - 1].features)
-        while ik < ntraining:
-            nh = gmpy2.popcount(inst.features ^ ordering[ik].features)
-            if nh != h:
-                break
-            ik += 1
-        nk += ik
-            
         nspam = sum([i.label for i in ordering[:k]])
         guess = nspam > k / 2
         if TRACE:
