@@ -2,8 +2,7 @@
 # Naive Bayes classification of binary instances.
 # Bart Massey
 
-import csv, math, random, sys
-import numpy as np
+import csv, gmpy2, math, random, sys
 
 # Show individual instance results.
 TRACE = False
@@ -13,7 +12,10 @@ class Instance(object):
     def __init__(self, row):
         self.name = row[0]
         self.label = int(row[1])
-        self.features = np.array([int(f) for f in row[2:]])
+        features = gmpy2.mpz(0)
+        for i, f in enumerate(row[2:]):
+            features |= int(f) << i
+        self.features = features
 
 # Read instances.
 with open(sys.argv[1], "r") as f:
@@ -32,10 +34,6 @@ k = int(sys.argv[3])
 # all instances.
 nfeatures = len(instances[0].features)
 
-# Hamming distance between feature vectors.
-def hamming(f1, f2):
-    return np.sum(np.abs(f1 - f2))
-
 # Try training on the training instances and then
 # classifying the test instances.  Return the classification
 # accuracy.
@@ -50,8 +48,16 @@ def try_tc(training, test):
         ordering = list(training)
         ordering = sorted(
             ordering,
-            key=lambda i: hamming(inst.features, i.features),
+            key=lambda i: gmpy2.popcount(inst.features ^ i.features),
         )
+        ik = k
+        h = gmpy2.popcount(inst.features ^ ordering[ik - 1].features)
+        while ik < ntraining:
+            nh = gmpy2.popcount(inst.features ^ ordering[ik].features)
+            if nh != h:
+                break
+            ik += 1
+        nk += ik
             
         nspam = sum([i.label for i in ordering[:k]])
         guess = nspam > k / 2
