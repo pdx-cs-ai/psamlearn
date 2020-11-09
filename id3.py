@@ -4,6 +4,8 @@
 
 import csv, math, random, sys
 
+# XXX Recursively building a tree; depth will depend on
+# number of instance features.
 sys.setrecursionlimit(10000)
 
 # Show individual instance results.
@@ -26,14 +28,17 @@ ninstances = len(instances)
 # Splits for cross-validation.
 nsplits = int(sys.argv[2])
 
+# Entropy threshold for continued splitting.
+min_entropy = None
+if len(sys.argv) > 3:
+    min_entropy = float(sys.argv[3])
+
 # Number of features per instance. XXX Should be same for
 # all instances.
 nfeatures = len(instances[0].features)
 
 def entropy(insts):
     ninsts = len(insts)
-    if ninsts == 0:
-        return 0
 
     np = 0
     for i in insts:
@@ -79,6 +84,9 @@ class DTree(object):
         if u is None:
             u = entropy(insts)
         self.u = u
+        if min_entropy is not None and u < min_entropy:
+            self.label = majority(insts)
+            return
 
         best_f = None
         best_du = None
