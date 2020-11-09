@@ -38,9 +38,11 @@ else:
 if len(sys.argv) > 4:
     min_chisquare = float(sys.argv[4])
 else:
-    # statistic with 1 DOF corresponds to p = 0.1
-    # https://stattrek.com/online-calculator/chi-square.aspx
-    min_chisquare = 0.211
+    # Statistic with 1 DOF corresponds to p <= 0.05
+    # that chisquare exceeds this value by chance.
+    # https://www.itl.nist.gov/div898/handbook/eda/section3/eda3674.htm
+    # http://alex.smola.org/teaching/cmu2013-10-701/slides/23_Trees.pdf
+    min_chisquare = 3.841
 
 # Number of features per instance. XXX Should be same for
 # all instances.
@@ -50,7 +52,7 @@ def chi_square(pos, neg):
     avg = (pos + neg) / 2
     dpos = pos - avg
     dneg = neg - avg
-    return (dpos * dpos + dneg * dneg) / avg;
+    return (dpos**2 + dneg**2) / avg;
 
 def count_labels(insts):
     ninsts = len(insts)
@@ -98,7 +100,8 @@ class DTree(object):
 
         np, nn = count_labels(insts)
         ninsts = np + nn
-        if chi_square(np, nn) < min_chisquare:
+        chs = chi_square(np, nn)
+        if chs < min_chisquare:
             self.label = int(np > nn)
             return
 
