@@ -133,15 +133,21 @@ impl DTree {
 
         let pos = DTree::make_dtree(&pos, used.clone(), pu, min_gain, min_chisquare);
         let neg = DTree::make_dtree(&neg, used, nu, min_gain, min_chisquare);
-        DTree::Branch { pos: Box::new(pos), neg: Box::new(neg), f }
+        DTree::Branch {
+            pos: Box::new(pos),
+            neg: Box::new(neg),
+            f,
+        }
     }
 
-    fn new(
-        insts: &[&Instance],
-        min_gain: Option<f64>,
-        min_chisquare: Option<f64>,
-    ) -> Self {
-        DTree::make_dtree(insts, HashSet::new(), entropy(insts), min_gain, min_chisquare)
+    fn new(insts: &[&Instance], min_gain: Option<f64>, min_chisquare: Option<f64>) -> Self {
+        DTree::make_dtree(
+            insts,
+            HashSet::new(),
+            entropy(insts),
+            min_gain,
+            min_chisquare,
+        )
     }
 
     fn classify(&self, inst: &Instance) -> bool {
@@ -153,7 +159,7 @@ impl DTree {
                 } else {
                     neg.classify(inst)
                 }
-            },
+            }
         }
     }
 }
