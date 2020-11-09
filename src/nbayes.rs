@@ -1,12 +1,23 @@
+//! Naïve Bayesian learner.
+
 use crate::{Model, Instance};
 
+/// Model info.
 pub struct NBayes {
+    /// Size of training set.
     ntraining: usize,
+    /// Number of instances negative / positive for
+    /// hypothesis.
     ns_h: [usize; 2],
+    /// Number of instances of evidence for a hypothesis
+    /// based on a given feature and its label. Access as
+    /// `n_eh[label][feature][feature_label]`.
     n_eh: Vec<Vec<[usize; 2]>>,
 }
 
 impl NBayes {
+    /// Return a "likelihood" score for the given instance
+    /// having the given label, based on our model.
     fn score_label(&self, instance: &Instance, label: u8) -> f64 {
         let mut logpr_eh = 0.0f64;
         for (i, &f) in instance.features.iter().enumerate() {
@@ -20,6 +31,7 @@ impl NBayes {
     }
 }
 
+/// Build our model from the training instance data.
 pub fn train(samples: &[&Instance]) -> Box<NBayes> {
     let ntraining = samples.len();
     let nfeatures = samples[0].features.len();

@@ -1,3 +1,8 @@
+//! Iterator producing "evenly-sized" chunks after divding a
+//! slice into chunks. The first chunks will in general have
+//! one more element than the later chunks.
+
+/// Even chunks iterator.
 pub struct EvenChunks<'a, T> {
     blocksize: usize,
     rem: usize,
@@ -5,13 +10,19 @@ pub struct EvenChunks<'a, T> {
 }
 
 impl<'a, T> EvenChunks<'a, T> {
+    /// Produce an iterator that "evenly" cuts the slice
+    /// into *n* chunks.
     pub fn nchunks(slice: &'a[T], nchunks: usize) -> Self {
         let nslice = slice.len();
         let mut blocksize = nslice / nchunks;
+
+        // Figure out how many longer chunks
+        // to put out.
         let rem = nslice - blocksize * nchunks;
         if rem > 0 {
             blocksize += 1;
         }
+        
         EvenChunks {
             blocksize,
             rem,

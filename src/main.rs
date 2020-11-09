@@ -1,62 +1,40 @@
+//! Machine learning driver geared toward PSAM data. Accepts
+//! binary features and classifications.
+
+mod args;
 mod evenchunks;
 mod knn;
 mod nbayes;
 
+use args::*;
 use evenchunks::*;
 
-use argh::FromArgs;
 use rand::seq::SliceRandom;
 use serde::Deserialize;
 
-#[derive(FromArgs)]
-/// Machine learning with binary features and classification.
-struct Args {
-    /// n-way cross-validation (0 for LOOCV)
-    #[argh(option)]
-    crossval: Option<usize>,
-    /// learning algorithm
-    #[argh(subcommand)]
-    algorithm: ArgsAlg,
-    /// csv feature file (default stdin)
-    #[argh(positional)]
-    features: Option<String>,
-}
-
-#[derive(FromArgs)]
-#[argh(subcommand)]
-enum ArgsAlg {
-    NBayes(NBayesArgs),
-    KNN(KNNArgs),
-}
-
-#[derive(FromArgs)]
-/// Naïve Bayes classifier.
-#[argh(subcommand, name = "nbayes")]
-struct NBayesArgs {}
-
-#[derive(FromArgs)]
-/// k-Nearest Neighbor classifier.
-#[argh(subcommand, name = "knn")]
-struct KNNArgs {
-    #[argh(option, short='k')]
-    /// k (default 5)
-    k: Option<usize>,
-}
-
+/// Instance from corpus.
 #[derive(Deserialize, Debug, Clone)]
 pub struct Instance {
+    /// Instance name.
     name: String,
+    /// Instance classification label.
     label: u8,
+    /// Instance feature labels.
     features: Vec<u8>,
 }
 
+/// Trait representing results of training a particular
+/// kind of model.
 pub trait Model {
+    /// Classify an instance based on this model's data.
     fn classify(&self, instance: &Instance) -> bool;
 }
 
 fn main() {
-    let args: Args = argh::from_env();
-    let features: Box<dyn std::io::Read> = match args.features {
+    let args = args::parse();
+
+    // Readable corpus file.
+    let corpus: Box<dyn std::io::Read> = match args.features {
         None => Box::new(std::io::stdin()),
         Some(name) => Box::new(std::fs::File::open(name).unwrap_or_else(
             |e| {
@@ -66,7 +44,8 @@ fn main() {
         )),
     };
 
-    let mut rdr = csv::ReaderBuilder::new().has_headers(false).from_reader(features);
+    // Read corpus instances.
+    let mut rdr = csv::ReaderBuilder::new().has_headers(false).from_reader(corpus);
     let mut instances: Vec<Instance> =
         rdr.deserialize().map(|r| r.unwrap_or_else(
             |e| {
@@ -75,11 +54,14 @@ fn main() {
             },
         )).collect();
 
+    // Shuffle instances.
     let mut rng = rand::thread_rng();
     instances.shuffle(&mut rng);
 
+    // Find a list of training / test splits.
     let samples: Vec<(Vec<&Instance>, &[Instance])> =
         match args.crossval {
+            // Single 50/50 split.
             None => {
                 let split = instances.len() / 2;
                 vec![(
@@ -91,6 +73,7 @@ fn main() {
             if n == 0 {
                 n = instances.len();
             }
+            // Crossval splits.
             let chunks: Vec<&[Instance]> =
                 EvenChunks::nchunks(&instances, n).collect();
             (0..n).map(|i| {
@@ -101,6 +84,7 @@ fn main() {
         }
     };
 
+    // Find a training function based on kind of learning.
     let train: Box<dyn Fn(&[&Instance])->Box<dyn Model>> =
         match args.algorithm {
             ArgsAlg::NBayes(NBayesArgs{}) => Box::new(|i| nbayes::train(i)),
@@ -110,6 +94,7 @@ fn main() {
             },
         };
 
+    // Run testing, report results.
     for (tr, cl) in samples {
         let model = train(&tr);
         let mut stats = [0usize; 4];
