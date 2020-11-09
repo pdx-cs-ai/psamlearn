@@ -28,25 +28,44 @@ ninstances = len(instances)
 # Splits for cross-validation.
 nsplits = int(sys.argv[2])
 
-# Entropy threshold for continued splitting.
-min_entropy = None
+# Gain threshold for continued splitting.
 if len(sys.argv) > 3:
-    min_entropy = float(sys.argv[3])
+    min_gain = float(sys.argv[3])
+else:
+    min_gain = 0.05
+
+# Significance threshold for continued splitting.
+if len(sys.argv) > 4:
+    min_chisquare = float(sys.argv[4])
+else:
+    # statistic with 1 DOF corresponds to p = 0.1
+    # https://stattrek.com/online-calculator/chi-square.aspx
+    min_chisquare = 0.211
 
 # Number of features per instance. XXX Should be same for
 # all instances.
 nfeatures = len(instances[0].features)
 
-def entropy(insts):
+def chi_square(pos, neg):
+    avg = (pos + neg) / 2
+    dpos = pos - avg
+    dneg = neg - avg
+    return (dpos * dpos + dneg * dneg) / avg;
+
+def count_labels(insts):
     ninsts = len(insts)
 
     np = 0
     for i in insts:
         np += i.label
-    if np == 0:
-        return 0
-    nn = ninsts - np
-    if nn == 0:
+
+    return np, ninsts - np
+
+def entropy(insts):
+    np, nn = count_labels(insts)
+    ninsts = np + nn
+
+    if np == 0 or nn == 0:
         return 0
 
     pr_p = np / ninsts
@@ -55,13 +74,8 @@ def entropy(insts):
     return -pr_p * math.log2(pr_p) - pr_n * math.log2(pr_n)
 
 def majority(insts):
-    ninsts = len(insts)
-
-    np = 0
-    for i in insts:
-        np += i.label
-    
-    return int(np > ninsts / 2)
+    np, nn = count_labels(insts)
+    return int(np > nn)
 
 def split(insts, f):
     splits = [[] for _ in range(2)]
@@ -77,32 +91,49 @@ class DTree(object):
             used = set(used)
 
         self.label = None
+
         if len(used) == nfeatures:
             self.label = majority(insts)
+            return
+
+        np, nn = count_labels(insts)
+        ninsts = np + nn
+        if chi_square(np, nn) < min_chisquare:
+            self.label = int(np > nn)
             return
 
         if u is None:
             u = entropy(insts)
         self.u = u
-        if min_entropy is not None and u < min_entropy:
-            self.label = majority(insts)
-            return
 
         best_f = None
-        best_du = None
+        best_gain = None
         best_split = None
         for f in range(nfeatures):
             if f in used:
                 continue
             pos, neg = split(insts, f)
-            pu = entropy(pos)
-            nu = entropy(neg)
-            du = u - pu - nu
-            if best_du is None or du > best_du:
-                best_du = du
+            npos = len(pos)
+            nneg = len(neg)
+            if npos == 0 or nneg == 0:
+                continue
+            u_pos = entropy(pos)
+            u_neg = entropy(neg)
+            pr_pos = npos / ninsts
+            pr_neg = nneg / ninsts
+            gain = u - pr_pos * u_pos - pr_neg * u_neg
+            if gain <= 0:
+                # XXX Numerical errors can lead to tiny
+                # negative gains.
+                continue
+            if best_gain is None or gain > best_gain:
+                best_gain = gain
                 best_f = f
-                best_split = ((pos, pu), (neg, nu))
-        assert best_f is not None
+                best_split = ((pos, u_pos), (neg, u_neg))
+
+        if best_f is None or best_gain < min_gain:
+            self.label = majority(insts)
+            return
         
         ps, ns = best_split
         pos, pu = ps
