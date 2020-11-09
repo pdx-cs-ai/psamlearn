@@ -36,63 +36,61 @@ fn main() {
     // Readable corpus file.
     let corpus: Box<dyn std::io::Read> = match args.features {
         None => Box::new(std::io::stdin()),
-        Some(name) => Box::new(std::fs::File::open(name).unwrap_or_else(
-            |e| {
-                eprintln!("could not open features: {}", e);
-                std::process::exit(1);
-            }
-        )),
+        Some(name) => Box::new(std::fs::File::open(name).unwrap_or_else(|e| {
+            eprintln!("could not open features: {}", e);
+            std::process::exit(1);
+        })),
     };
 
     // Read corpus instances.
-    let mut rdr = csv::ReaderBuilder::new().has_headers(false).from_reader(corpus);
-    let mut instances: Vec<Instance> =
-        rdr.deserialize().map(|r| r.unwrap_or_else(
-            |e| {
+    let mut rdr = csv::ReaderBuilder::new()
+        .has_headers(false)
+        .from_reader(corpus);
+    let mut instances: Vec<Instance> = rdr
+        .deserialize()
+        .map(|r| {
+            r.unwrap_or_else(|e| {
                 eprintln!("could not read record: {}", e);
                 std::process::exit(1);
-            },
-        )).collect();
+            })
+        })
+        .collect();
 
     // Shuffle instances.
     let mut rng = rand::thread_rng();
     instances.shuffle(&mut rng);
 
     // Find a list of training / test splits.
-    let samples: Vec<(Vec<&Instance>, &[Instance])> =
-        match args.crossval {
-            // Single 50/50 split.
-            None => {
-                let split = instances.len() / 2;
-                vec![(
-                    instances[split..].iter().collect(),
-                    &instances[..split],
-                )]
-            },
+    let samples: Vec<(Vec<&Instance>, &[Instance])> = match args.crossval {
+        // Single 50/50 split.
+        None => {
+            let split = instances.len() / 2;
+            vec![(instances[split..].iter().collect(), &instances[..split])]
+        }
         Some(mut n) => {
             if n == 0 {
                 n = instances.len();
             }
             // Crossval splits.
-            let chunks: Vec<&[Instance]> =
-                EvenChunks::nchunks(&instances, n).collect();
-            (0..n).map(|i| {
-                let left = chunks[..i].iter().cloned().flatten();
-                let right = chunks[i+1..].iter().cloned().flatten();
-                (left.chain(right).collect(), chunks[i])
-            }).collect()
+            let chunks: Vec<&[Instance]> = EvenChunks::nchunks(&instances, n).collect();
+            (0..n)
+                .map(|i| {
+                    let left = chunks[..i].iter().cloned().flatten();
+                    let right = chunks[i + 1..].iter().cloned().flatten();
+                    (left.chain(right).collect(), chunks[i])
+                })
+                .collect()
         }
     };
 
     // Find a training function based on kind of learning.
-    let train: Box<dyn Fn(&[&Instance])->Box<dyn Model>> =
-        match args.algorithm {
-            ArgsAlg::NBayes(NBayesArgs{}) => Box::new(|i| nbayes::train(i)),
-            ArgsAlg::KNN(KNNArgs{k}) => match k {
-                None => Box::new(|i| knn::train(5, i)),
-                Some(k) => Box::new(move |i| knn::train(k, i)),
-            },
-        };
+    let train: Box<dyn Fn(&[&Instance]) -> Box<dyn Model>> = match args.algorithm {
+        ArgsAlg::NBayes(NBayesArgs {}) => Box::new(|i| nbayes::train(i)),
+        ArgsAlg::KNN(KNNArgs { k }) => match k {
+            None => Box::new(|i| knn::train(5, i)),
+            Some(k) => Box::new(move |i| knn::train(k, i)),
+        },
+    };
 
     // Run testing, report results.
     for (tr, cl) in samples {

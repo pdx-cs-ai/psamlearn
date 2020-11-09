@@ -32,7 +32,7 @@ pub struct NBayesArgs {}
 /// k-Nearest Neighbor classifier.
 #[argh(subcommand, name = "knn")]
 pub struct KNNArgs {
-    #[argh(option, short='k')]
+    #[argh(option, short = 'k')]
     /// k (default 5)
     pub k: Option<usize>,
 }

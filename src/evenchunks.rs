@@ -6,13 +6,13 @@
 pub struct EvenChunks<'a, T> {
     blocksize: usize,
     rem: usize,
-    rest: &'a[T],
+    rest: &'a [T],
 }
 
 impl<'a, T> EvenChunks<'a, T> {
     /// Produce an iterator that "evenly" cuts the slice
     /// into *n* chunks.
-    pub fn nchunks(slice: &'a[T], nchunks: usize) -> Self {
+    pub fn nchunks(slice: &'a [T], nchunks: usize) -> Self {
         let nslice = slice.len();
         let mut blocksize = nslice / nchunks;
 
@@ -22,7 +22,7 @@ impl<'a, T> EvenChunks<'a, T> {
         if rem > 0 {
             blocksize += 1;
         }
-        
+
         EvenChunks {
             blocksize,
             rem,
@@ -32,7 +32,7 @@ impl<'a, T> EvenChunks<'a, T> {
 }
 
 impl<'a, T> Iterator for EvenChunks<'a, T> {
-    type Item = &'a[T];
+    type Item = &'a [T];
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.rest.is_empty() {

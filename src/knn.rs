@@ -2,7 +2,7 @@
 
 use num_bigint::BigUint;
 
-use crate::{Model, Instance};
+use crate::{Instance, Model};
 
 /// Instance with features compiled to a bit vector
 /// represented as a big integer. This allows much faster
@@ -35,8 +35,7 @@ fn collect_features(features: &[u8]) -> BigUint {
 /// integer. See `num-bigint` Issue
 /// [#174](https://github.com/rust-num/num-bigint/issues/174).
 fn count_ones(b: BigUint) -> u64 {
-    b
-        .to_u32_digits()
+    b.to_u32_digits()
         .into_iter()
         .map(|d| d.count_ones() as u64)
         .sum()
@@ -52,10 +51,7 @@ pub fn train(k: usize, instances: &[&Instance]) -> Box<KNN> {
         })
         .collect();
 
-    Box::new(KNN {
-        k,
-        instances,
-    })
+    Box::new(KNN { k, instances })
 }
 
 impl Model for KNN {
@@ -68,7 +64,8 @@ impl Model for KNN {
 
         // Sort instance labels by increasing instance
         // distance.
-        let mut info: Vec<(u8, u64)> = self.instances
+        let mut info: Vec<(u8, u64)> = self
+            .instances
             .iter()
             .map(|i| {
                 let h = count_ones(&i.features ^ &instance.features);
@@ -79,13 +76,13 @@ impl Model for KNN {
 
         // For each label, compute the counts among the *k*
         // nearest neighbors.
-        let lweights: [usize; 2] = info
-            .into_iter()
-            .take(self.k)
-            .fold([0usize; 2], |mut counts, (c, _)| {
-                counts[c as usize] += 1;
-                counts
-            });
+        let lweights: [usize; 2] =
+            info.into_iter()
+                .take(self.k)
+                .fold([0usize; 2], |mut counts, (c, _)| {
+                    counts[c as usize] += 1;
+                    counts
+                });
 
         // Whichever count is larger wins.
         lweights[1] > lweights[0]

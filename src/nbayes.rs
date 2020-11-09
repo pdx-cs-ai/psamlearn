@@ -1,6 +1,6 @@
 //! Naïve Bayesian learner.
 
-use crate::{Model, Instance};
+use crate::{Instance, Model};
 
 /// Model info.
 pub struct NBayes {
@@ -54,7 +54,11 @@ pub fn train(samples: &[&Instance]) -> Box<NBayes> {
         }
         n_eh.push(lcounts);
     }
-    Box::new(NBayes { ntraining, ns_h, n_eh })
+    Box::new(NBayes {
+        ntraining,
+        ns_h,
+        n_eh,
+    })
 }
 
 impl Model for NBayes {
