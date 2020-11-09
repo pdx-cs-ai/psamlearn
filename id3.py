@@ -68,6 +68,8 @@ class DTree(object):
     def __init__(self, insts, used=None, u=None):
         if used is None:
             used = set()
+        else:
+            used = set(used)
 
         self.label = None
         if len(used) == nfeatures:
