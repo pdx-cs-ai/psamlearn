@@ -28,7 +28,13 @@ cross-validation and a neighbor distance of 5, say
 
     cargo run -- --crossval 10 personal.csv knn -k 5
 
-In both cases, the output will consist of the accuracy for
-each cross-validation split.
+To run ID3 on the "personal" corpus with 10-way
+cross-validation, a min gain of 0.01, and a min chi-square
+of 3.81, say
+
+    cargo run -- --crossval 10 personal.csv id3 -g 0.01 -c 3.81
+
+In all cases, the output will consist of the confusion
+matrix and accuracy for each cross-validation split.
 
 For further information on usage, try `cargo run -- --help`.
