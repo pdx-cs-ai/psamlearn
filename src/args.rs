@@ -21,12 +21,25 @@ pub struct Args {
 pub enum ArgsAlg {
     NBayes(NBayesArgs),
     KNN(KNNArgs),
+    ID3(ID3Args),
 }
 
 #[derive(FromArgs)]
 /// Naïve Bayes classifier.
 #[argh(subcommand, name = "nbayes")]
 pub struct NBayesArgs {}
+
+#[derive(FromArgs)]
+/// ID3 classifier.
+#[argh(subcommand, name = "id3")]
+pub struct ID3Args {
+    #[argh(option, short = 'g')]
+    /// minimum gain to split (recommend 0.05)
+    pub min_gain: Option<f64>,
+    #[argh(option, short = 'c')]
+    /// minimum chi_square to split (recommend 3.841 for p=0.05)
+    pub min_chisquare: Option<f64>,
+}
 
 #[derive(FromArgs)]
 /// k-Nearest Neighbor classifier.

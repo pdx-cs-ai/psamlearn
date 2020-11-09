@@ -3,6 +3,8 @@
 
 mod args;
 mod evenchunks;
+
+mod id3;
 mod knn;
 mod nbayes;
 
@@ -89,6 +91,9 @@ fn main() {
         ArgsAlg::KNN(KNNArgs { k }) => match k {
             None => Box::new(|i| knn::train(5, i)),
             Some(k) => Box::new(move |i| knn::train(k, i)),
+        },
+        ArgsAlg::ID3(ID3Args { min_gain, min_chisquare }) => {
+            Box::new(move |i| id3::train(i, min_gain, min_chisquare))
         },
     };
 
