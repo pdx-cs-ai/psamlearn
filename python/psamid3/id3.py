@@ -34,25 +34,9 @@ if len(sys.argv) > 3:
 else:
     min_gain = 0.05
 
-# Significance threshold for continued splitting.
-if len(sys.argv) > 4:
-    min_chisquare = float(sys.argv[4])
-else:
-    # Statistic with 1 DOF corresponds to p <= 0.05
-    # that chisquare exceeds this value by chance.
-    # https://www.itl.nist.gov/div898/handbook/eda/section3/eda3674.htm
-    # http://alex.smola.org/teaching/cmu2013-10-701/slides/23_Trees.pdf
-    min_chisquare = 3.841
-
 # Number of features per instance. XXX Should be same for
 # all instances.
 nfeatures = len(instances[0].features)
-
-def chi_square(pos, neg):
-    avg = (pos + neg) / 2
-    dpos = pos - avg
-    dneg = neg - avg
-    return (dpos**2 + dneg**2) / avg;
 
 def count_labels(insts):
     ninsts = len(insts)
@@ -100,10 +84,6 @@ class DTree(object):
 
         np, nn = count_labels(insts)
         ninsts = np + nn
-        chs = chi_square(np, nn)
-        if chs < min_chisquare:
-            self.label = int(np > nn)
-            return
 
         if u is None:
             u = entropy(insts)
