@@ -18,9 +18,9 @@ This repository contains a couple of things:
 ## Running
 
 To run on the "personal" corpus with 10-way
-cross-validation, say
+cross-validation, and 0.01 information gain limit say
 
-    python3 id3.py personal.csv 10
+    python3 id3.py personal.csv 10 0.01
 
 The output will consist of the accuracy for each
 cross-validation split.

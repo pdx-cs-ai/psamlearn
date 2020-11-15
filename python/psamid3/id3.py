@@ -32,7 +32,7 @@ nsplits = int(sys.argv[2])
 if len(sys.argv) > 3:
     min_gain = float(sys.argv[3])
 else:
-    min_gain = 0.05
+    min_gain = 0.00
 
 # Number of features per instance. XXX Should be same for
 # all instances.
